@@ -10,10 +10,7 @@
      arr=("$@")
      for i in "${arr[@]}";
       do
-        # if [ "$i" != "${arr[0]}" ]
-        # then
-          echo "$i"
-        # fi  
+        echo "$i"
       done
  }
 
@@ -30,15 +27,11 @@
         echo "you have chosen: $selection .."
 
         while : ; do
-#            echo i = $i
-#            echo pos = $pos
-#            echo arr[$i] = ${arr[$i]}
             if [[ $selection == ${arr[$i]} ]] 
             then
             echo this $focus exists; 
             break 2 
             else
-            #    echo going through list ...
                 if [ "$i" -eq $pos ]
                 then
                     echo Am afraid this $focus is not on the list, try again ...
