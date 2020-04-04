@@ -94,11 +94,11 @@ echo "5) will need to login to dump again with npf to transfer source file to yo
 sleep 2
 scp npf@storage.jupiter.bbc.co.uk:/var/bigpool/shares/dump/00_test_media_library/$CHOSEN_RES/$selection ./
 echo "6) generating MD5 for this file ..."
-sleep 3
+sleep 2
 md5sum $CHOSEN_FILE | cut -d' ' -f1 > $CHOSEN_FILE.md5
 
 echo "7) will generate the xml file now... "
-sleep 3
+sleep 2
 
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <newsMessage xmlns=\"http://iptc.org/std/nar/2006-10-01/\" xmlns:php=\"http://php.net/xsl\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\" xmlns:jupiter=\"http://jupiter.bbc.co.uk/newsml\" >
@@ -155,6 +155,7 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 
 
 echo "8) will need to login to zgbwcjvsfs7ws01.jupiter.bbc.co.uk again with your Jupiter pw to transfer source file from your local to NT ingest server ... "
+sleep 2
 scp ./$CHOSEN_FILE ./$CHOSEN_FILE.xml ./$CHOSEN_FILE.md5 zgbwcjvsfs7ws01.jupiter.bbc.co.uk:/var/bigpool/JupiterNT/test_ingest/davina/ivan-$DESTINATION_DIR/$CHOSEN_RES
 rm ./$CHOSEN_FILE ./$CHOSEN_FILE.xml ./$CHOSEN_FILE.md5
 
