@@ -83,6 +83,7 @@ DESTINATION_DIR=$(date +%Y%m%d_%H%M%S)
 echo DESTINATION_DIR: $DESTINATION_DIR
 
 echo "4) I will create a new folder in NT (zgbwcjvsfs7ws01).. please log in with your jupiter password ..."
+sleep 2
 ssh zgbwcjvsfs7ws01.jupiter.bbc.co.uk "cd $INGEST_LOC;
 ls;
 mkdir ivan-$DESTINATION_DIR;
@@ -90,6 +91,7 @@ cd ivan-$DESTINATION_DIR;
 mkdir $CHOSEN_RES;
 cd $CHOSEN_RES;"
 echo "5) will need to login to dump again with npf to transfer source file to your directory temporarily ... "
+sleep 2
 scp npf@storage.jupiter.bbc.co.uk:/var/bigpool/shares/dump/00_test_media_library/$CHOSEN_RES/$selection ./
 echo "6) generating MD5 for this file ..."
 sleep 3
