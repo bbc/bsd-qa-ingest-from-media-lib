@@ -1,8 +1,8 @@
 #!/bin/bash
 
- MEDIA_LIB_LOC='/var/bigpool/shares/dump/00_test_media_library'  
- INGEST_LOC='/var/bigpool/JupiterNT/test_ingest/davina/'
- CURRENT_TIMESTAMP=$(date +"%Y-%m-%dT%T.818Z")
+MEDIA_LIB_LOC='/var/bigpool/shares/dump/00_test_media_library'
+INGEST_LOC='/var/bigpool/JupiterNT/test_ingest/davina/'
+CURRENT_TIMESTAMP=$(date +"%Y-%m-%dT%T.818Z")
 
 
  display_list() {
