@@ -9,6 +9,13 @@ CURRENT_TIMESTAMP=$(date +"%Y-%m-%dT%T.818Z")
     sleep 2
  }
 
+ sending_auth() {
+    echo $1
+    sleep 2
+    cat ~/.ssh/id_rsa.pub | ssh $2 ' cat >>.ssh/authorized_keys'
+    sleep 2
+ }
+
  display_list() {
      echo "choices are: "
      arr=("$@")
@@ -26,7 +33,7 @@ CURRENT_TIMESTAMP=$(date +"%Y-%m-%dT%T.818Z")
     display_list "${arr[@]}"
     i=0
     while : ; do
-        echo "2) Please choose your $focus by typing in the whole filename or filepath ..."
+        echo "... Please choose your $focus by typing in the whole filename or filepath ..."
         read selection
         echo "you have chosen: $selection .."
 
@@ -49,43 +56,37 @@ CURRENT_TIMESTAMP=$(date +"%Y-%m-%dT%T.818Z")
     done
  }
 
- sending_auth(){
+ display_choices_and_prompt() {
     echo $1
     sleep 2
-    cat ~/.ssh/id_rsa.pub | ssh $2 ' cat >>.ssh/authorized_keys'
+    if [[ $3 == 'resolution' ]]; then
+        media_res=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC;ls;")
+    elif [[ $3 == 'file' ]]; then
+        media_res=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC/$CHOSEN_RES; find . -path '*.[a-z][a-z][a-z]' | cut -c2-")
+    else
+        echo " error with the 3rd argument, must be either 'resolution' or 'file"
+        exit 1
+    fi
+
+    echo $2
     sleep 2
+    media_res_array=($media_res)
+    echo media_res_array: ${media_res_array[@]}
+    mra_size=$(( ${#media_res_array[*]} - 1 ))
+    search_array "$mra_size" $3 "${media_res_array[@]}"
  }
 
 splash
 sending_auth " .. sending authorisation keys to the dump server where the contents are ... " npf@storage.jupiter.bbc.co.uk
-sending_auth " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password ... " zgbwcjvsfs7ws01.jupiter.bbc.co.uk
-
-
-echo "1) SSHing to Test Library in storage.jupiter.bbc.co.uk, please log in as 'npf/npf'..."
-sleep 2
-MEDIA_RES=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC;ls;")
-echo "Here are the resolutions available from the library ... "
-sleep 2
-media_res_array=($MEDIA_RES)
-echo media_res_array: ${media_res_array[@]}
-mra_size=$(( ${#media_res_array[*]} - 1 ))
-search_array "$mra_size" "resolution" "${media_res_array[@]}"
-
+sending_auth " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password if first time ... " zgbwcjvsfs7ws01.jupiter.bbc.co.uk
+display_choices_and_prompt "1) SSHing to Test Library in storage.jupiter.bbc.co.uk ..." \
+"Here are the resolutions available from the library ... " "resolution"
 
 CHOSEN_RES=$selection
 echo $CHOSEN_RES
 
-
-echo "3) OK, I will need to ask you which file in that resolution you would like to pick... so you need to login again as npf/npf..."
-sleep 2
-MEDIA_FILES=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC/$CHOSEN_RES; find . -path '*.[a-z][a-z][a-z]' | cut -c2-")
-echo "Here are the files available in the library for that resolution ... "
-sleep 2
-
-media_files_array=($MEDIA_FILES)
-mfa_size=$(( ${#media_files_array[*]} - 1 ))
-search_array "$mfa_size" "file" "${media_files_array[@]}"
-
+display_choices_and_prompt "2) OK, I will need to ask you which file in that resolution you would like to pick..." \
+"Here are the files available in the library for that resolution ... " "file"
 
 CHOSEN_FILE=$(echo $selection |  rev | cut -d'/' -f1 | rev)
 echo CHOSEN_FILE = $CHOSEN_FILE
@@ -94,21 +95,21 @@ echo CHOSEN_FILE = $CHOSEN_FILE
 DESTINATION_DIR=$(date +%Y%m%d_%H%M%S)
 echo DESTINATION_DIR: $DESTINATION_DIR
 
-echo "4) I will create a new folder in NT (zgbwcjvsfs7ws01).. please log in with your jupiter password if this is the first time this script is run ..."
+echo "3) I will create a new folder in NT (zgbwcjvsfs7ws01).. please log in with your jupiter password if this is the first time this script is run ..."
 sleep 2
 ssh zgbwcjvsfs7ws01.jupiter.bbc.co.uk "cd $INGEST_LOC;
 mkdir ivan-$DESTINATION_DIR;
 cd ivan-$DESTINATION_DIR;
 mkdir $CHOSEN_RES;
 cd $CHOSEN_RES;"
-echo "5) will need to login to dump again with npf to transfer source file to your directory temporarily ... "
+echo "4) will need to login to dump again with npf to transfer source file to your directory temporarily ... "
 sleep 2
 scp npf@storage.jupiter.bbc.co.uk:/var/bigpool/shares/dump/00_test_media_library/$CHOSEN_RES/$selection ./
-echo "6) generating MD5 for this file ..."
+echo "5) generating MD5 for this file ..."
 sleep 2
 md5sum $CHOSEN_FILE | cut -d' ' -f1 > $CHOSEN_FILE.md5
 
-echo "7) will generate the xml file now... "
+echo "6) will generate the xml file now... "
 sleep 2
 
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
@@ -165,7 +166,7 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 " >> $CHOSEN_FILE.xml
 
 
-echo "8) will need to login to zgbwcjvsfs7ws01.jupiter.bbc.co.uk again with your Jupiter pw to transfer source file from your local to NT ingest server ... "
+echo "7) will need to login to zgbwcjvsfs7ws01.jupiter.bbc.co.uk again with your Jupiter pw to transfer source file from your local to NT ingest server ... "
 sleep 2
 scp ./$CHOSEN_FILE ./$CHOSEN_FILE.xml ./$CHOSEN_FILE.md5 zgbwcjvsfs7ws01.jupiter.bbc.co.uk:/var/bigpool/JupiterNT/test_ingest/davina/ivan-$DESTINATION_DIR/$CHOSEN_RES
 rm ./$CHOSEN_FILE ./$CHOSEN_FILE.xml ./$CHOSEN_FILE.md5
