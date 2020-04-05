@@ -2,7 +2,8 @@
 
 MEDIA_LIB_LOC='/var/bigpool/shares/dump/00_test_media_library'
 INGEST_LOC='/var/bigpool/JupiterNT/test_ingest/davina/'
-CURRENT_TIMESTAMP=$(date +"%Y-%m-%dT%T.818Z")
+CURRENT_TIMESTAMP_WITH_MS=$(date +"%Y-%m-%dT%T.818Z")
+CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
  splash() {
     echo ">>>>>> WELCOME TO THE WIZARD FOR INGESTING MEDIA CONTENT FROM MARK HIMSLEY'S MEDIA LIBRARY ONTO NT <<<<<<"
@@ -62,7 +63,7 @@ CURRENT_TIMESTAMP=$(date +"%Y-%m-%dT%T.818Z")
     if [[ $3 == 'resolution' ]]; then
         media_res=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC;ls;")
     elif [[ $3 == 'file' ]]; then
-        media_res=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC/$CHOSEN_RES; find . -path '*.[a-z][a-z][a-z]' | cut -c2-")
+        media_res=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC/$chosen_res; find . -path '*.[a-z][a-z][a-z]' | cut -c2-")
     else
         echo " error with the 3rd argument, must be either 'resolution' or 'file"
         exit 1
@@ -82,32 +83,28 @@ sending_auth " .. sending authorisation keys to the destination NT server where 
 display_choices_and_prompt "1) SSHing to Test Library in storage.jupiter.bbc.co.uk ..." \
 "Here are the resolutions available from the library ... " "resolution"
 
-CHOSEN_RES=$selection
-echo $CHOSEN_RES
+chosen_res=$selection
+echo $chosen_res
 
 display_choices_and_prompt "2) OK, I will need to ask you which file in that resolution you would like to pick..." \
 "Here are the files available in the library for that resolution ... " "file"
 
-CHOSEN_FILE=$(echo $selection |  rev | cut -d'/' -f1 | rev)
-echo CHOSEN_FILE = $CHOSEN_FILE
-
-
-DESTINATION_DIR=$(date +%Y%m%d_%H%M%S)
-echo DESTINATION_DIR: $DESTINATION_DIR
+chosen_file=$(echo $selection |  rev | cut -d'/' -f1 | rev)
+echo chosen_file = $chosen_file
 
 echo "3) I will create a new folder in NT (zgbwcjvsfs7ws01).. please log in with your jupiter password if this is the first time this script is run ..."
 sleep 2
 ssh zgbwcjvsfs7ws01.jupiter.bbc.co.uk "cd $INGEST_LOC;
-mkdir ivan-$DESTINATION_DIR;
-cd ivan-$DESTINATION_DIR;
-mkdir $CHOSEN_RES;
-cd $CHOSEN_RES;"
+mkdir ivan-$CURRENT_TIMESTAMP;
+cd ivan-$CURRENT_TIMESTAMP;
+mkdir $chosen_res;
+cd $chosen_res;"
 echo "4) will need to login to dump again with npf to transfer source file to your directory temporarily ... "
 sleep 2
-scp npf@storage.jupiter.bbc.co.uk:/var/bigpool/shares/dump/00_test_media_library/$CHOSEN_RES/$selection ./
+scp npf@storage.jupiter.bbc.co.uk:/var/bigpool/shares/dump/00_test_media_library/$chosen_res/$selection ./
 echo "5) generating MD5 for this file ..."
 sleep 2
-md5sum $CHOSEN_FILE | cut -d' ' -f1 > $CHOSEN_FILE.md5
+md5sum $chosen_file | cut -d' ' -f1 > $chosen_file.md5
 
 echo "6) will generate the xml file now... "
 sleep 2
@@ -115,7 +112,7 @@ sleep 2
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <newsMessage xmlns=\"http://iptc.org/std/nar/2006-10-01/\" xmlns:php=\"http://php.net/xsl\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\" xmlns:jupiter=\"http://jupiter.bbc.co.uk/newsml\" >
 	<header>
-		<sent>$CURRENT_TIMESTAMP</sent>
+		<sent>$CURRENT_TIMESTAMP_WITH_MS</sent>
 		<sender>Shoot edit tool</sender>
 		<priority>4</priority>
 	</header>
@@ -133,21 +130,21 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 			<itemMeta>
 				<itemClass qcode=\"ninat:video\"/>
 				<provider qcode=\"nprov:BBC\"/>
-				<versionCreated jupiter:item=\"arrivaldatetime\">$CURRENT_TIMESTAMP</versionCreated>
+				<versionCreated jupiter:item=\"arrivaldatetime\">$CURRENT_TIMESTAMP_WITH_MS</versionCreated>
 				<generator/>
 				<profile/>
 			</itemMeta>
 			<contentMeta>
-				<contentCreated jupiter:item=\"creationdatetime\">$CURRENT_TIMESTAMP</contentCreated>
+				<contentCreated jupiter:item=\"creationdatetime\">$CURRENT_TIMESTAMP_WITH_MS</contentCreated>
 				<contentModified>2020-03-16T13:00:51.818Z</contentModified>
 
 				<creator jupiter:item=\"createdbyuser\">
 					<name>Ivan</name>
 				</creator>
 				<slugline jupiter:item=\"storyname\">zzivan</slugline>
-				<headline jupiter:item=\"details\">ingest test sprint 43- 1731 ($CHOSEN_RES / $CHOSEN_FILE)</headline>
+				<headline jupiter:item=\"details\">ingest test sprint 43- 1731 ($chosen_res / $chosen_file)</headline>
 				<description jupiter:item=\"description\">
-					this is to test ingest of $CHOSEN_RES with file $CHOSEN_FILE
+					this is to test ingest of $chosen_res with file $chosen_file
 				 </description>
 
 				<keyword/>
@@ -163,13 +160,13 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 		</newsItem>
 	</itemSet>
 </newsMessage>
-" >> $CHOSEN_FILE.xml
+" >> $chosen_file.xml
 
 
 echo "7) will need to login to zgbwcjvsfs7ws01.jupiter.bbc.co.uk again with your Jupiter pw to transfer source file from your local to NT ingest server ... "
 sleep 2
-scp ./$CHOSEN_FILE ./$CHOSEN_FILE.xml ./$CHOSEN_FILE.md5 zgbwcjvsfs7ws01.jupiter.bbc.co.uk:/var/bigpool/JupiterNT/test_ingest/davina/ivan-$DESTINATION_DIR/$CHOSEN_RES
-rm ./$CHOSEN_FILE ./$CHOSEN_FILE.xml ./$CHOSEN_FILE.md5
+scp ./$chosen_file ./$chosen_file.xml ./$chosen_file.md5 zgbwcjvsfs7ws01.jupiter.bbc.co.uk:/var/bigpool/JupiterNT/test_ingest/davina/ivan-$CURRENT_TIMESTAMP/$chosen_res
+rm ./$chosen_file ./$chosen_file.xml ./$chosen_file.md5
 
 
 exit 0
