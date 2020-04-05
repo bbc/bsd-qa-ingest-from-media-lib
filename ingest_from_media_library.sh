@@ -4,6 +4,10 @@ MEDIA_LIB_LOC='/var/bigpool/shares/dump/00_test_media_library'
 INGEST_LOC='/var/bigpool/JupiterNT/test_ingest/davina/'
 CURRENT_TIMESTAMP=$(date +"%Y-%m-%dT%T.818Z")
 
+ splash() {
+    echo ">>>>>> WELCOME TO THE WIZARD FOR INGESTING MEDIA CONTENT FROM MARK HIMSLEY'S MEDIA LIBRARY ONTO NT <<<<<<"
+    sleep 2
+ }
 
  display_list() {
      echo "choices are: "
@@ -45,22 +49,24 @@ CURRENT_TIMESTAMP=$(date +"%Y-%m-%dT%T.818Z")
     done
  }
 
-echo ">>>>>> WELCOME TO THE WIZARD FOR INGESTING MEDIA CONTENT FROM MARK HIMSLEY'S MEDIA LIBRARY ONTO NT <<<<<<"
-sleep 2
-echo " .. sending authorisation keys to the dump server where the contents are ... "
-sleep 2
-cat ~/.ssh/id_rsa.pub | ssh npf@storage.jupiter.bbc.co.uk ' cat >>.ssh/authorized_keys'
-echo " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password ... "
-sleep 2
-cat ~/.ssh/id_rsa.pub | ssh zgbwcjvsfs7ws01.jupiter.bbc.co.uk ' cat >>.ssh/authorized_keys'
-sleep 2
+ sending_auth(){
+    echo $1
+    sleep 2
+    cat ~/.ssh/id_rsa.pub | ssh $2 ' cat >>.ssh/authorized_keys'
+    sleep 2
+ }
+
+splash
+sending_auth " .. sending authorisation keys to the dump server where the contents are ... " npf@storage.jupiter.bbc.co.uk
+sending_auth " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password ... " zgbwcjvsfs7ws01.jupiter.bbc.co.uk
+
 
 echo "1) SSHing to Test Library in storage.jupiter.bbc.co.uk, please log in as 'npf/npf'..."
 sleep 2
 MEDIA_RES=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC;ls;")
 echo "Here are the resolutions available from the library ... "
 sleep 2
-media_res_array=($MEDIA_RES) 
+media_res_array=($MEDIA_RES)
 echo media_res_array: ${media_res_array[@]}
 mra_size=$(( ${#media_res_array[*]} - 1 ))
 search_array "$mra_size" "resolution" "${media_res_array[@]}"
