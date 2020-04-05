@@ -132,9 +132,9 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 					<name>Ivan</name>
 				</creator>
 				<slugline jupiter:item=\"storyname\">zzivan</slugline>
-				<headline jupiter:item=\"details\">ingest test sprint 43- 1731 ($CHOSEN_RES)</headline>
+				<headline jupiter:item=\"details\">ingest test sprint 43- 1731 ($CHOSEN_RES / $CHOSEN_FILE)</headline>
 				<description jupiter:item=\"description\">
-					this is to test $CHOSEN_RES
+					this is to test ingest of $CHOSEN_RES with file $CHOSEN_FILE
 				 </description>
 
 				<keyword/>
