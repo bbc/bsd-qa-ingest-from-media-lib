@@ -43,9 +43,17 @@ CURRENT_TIMESTAMP=$(date +"%Y-%m-%dT%T.818Z")
             fi
         done 
     done
-    echo $selection
  }
 
+echo ">>>>>> WELCOME TO THE WIZARD FOR INGESTING MEDIA CONTENT FROM MARK HIMSLEY'S MEDIA LIBRARY ONTO NT <<<<<<"
+sleep 2
+echo " .. sending authorisation keys to the dump server where the contents are ... "
+sleep 2
+cat ~/.ssh/id_rsa.pub | ssh npf@storage.jupiter.bbc.co.uk ' cat >>.ssh/authorized_keys'
+echo " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password ... "
+sleep 2
+cat ~/.ssh/id_rsa.pub | ssh zgbwcjvsfs7ws01.jupiter.bbc.co.uk ' cat >>.ssh/authorized_keys'
+sleep 2
 
 echo "1) SSHing to Test Library in storage.jupiter.bbc.co.uk, please log in as 'npf/npf'..."
 sleep 2
@@ -67,7 +75,6 @@ sleep 2
 MEDIA_FILES=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC/$CHOSEN_RES; find . -path '*.[a-z][a-z][a-z]' | cut -c2-")
 echo "Here are the files available in the library for that resolution ... "
 sleep 2
-echo MEDIA_FILES: $MEDIA_FILES
 
 media_files_array=($MEDIA_FILES)
 mfa_size=$(( ${#media_files_array[*]} - 1 ))
@@ -81,10 +88,9 @@ echo CHOSEN_FILE = $CHOSEN_FILE
 DESTINATION_DIR=$(date +%Y%m%d_%H%M%S)
 echo DESTINATION_DIR: $DESTINATION_DIR
 
-echo "4) I will create a new folder in NT (zgbwcjvsfs7ws01).. please log in with your jupiter password ..."
+echo "4) I will create a new folder in NT (zgbwcjvsfs7ws01).. please log in with your jupiter password if this is the first time this script is run ..."
 sleep 2
 ssh zgbwcjvsfs7ws01.jupiter.bbc.co.uk "cd $INGEST_LOC;
-ls;
 mkdir ivan-$DESTINATION_DIR;
 cd ivan-$DESTINATION_DIR;
 mkdir $CHOSEN_RES;
