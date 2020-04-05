@@ -52,7 +52,6 @@ sleep 2
 MEDIA_RES=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC;ls;")
 echo "Here are the resolutions available from the library ... "
 sleep 2
-echo MEDIA_RES: $MEDIA_RES
 media_res_array=($MEDIA_RES) 
 echo media_res_array: ${media_res_array[@]}
 mra_size=$(( ${#media_res_array[*]} - 1 ))
