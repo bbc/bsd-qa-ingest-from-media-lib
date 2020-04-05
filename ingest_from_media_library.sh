@@ -170,6 +170,14 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     sleep 2
  }
 
+ test_ingest() {
+    if [[ "$(ingest $1 $2 $3)" != "0" ]];then
+    success $2 $1
+    else
+    failure $2 $1
+    fi
+ }
+
 splash
 sending_auth " .. sending authorisation keys to the dump server where the contents are ... " npf@storage.jupiter.bbc.co.uk
 sending_auth " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password if first time ... " zgbwcjvsfs7ws01.jupiter.bbc.co.uk
@@ -179,11 +187,6 @@ chosen_res=$selection
 display_choices_and_prompt "2) OK, I will need to ask you which file in that resolution you would like to pick..." \
 "Here are the files available in the library for that resolution ... " "file"
 chosen_file=$(echo $selection |  rev | cut -d'/' -f1 | rev)
-
-if [[ "$(ingest $chosen_res $chosen_file $selection)" != "0" ]];then
-    success $chosen_file $chosen_res
-else
-    failure $chosen_file $chosen_res
-fi
+test_ingest $chosen_res $chosen_file $selection
 
 exit 0
