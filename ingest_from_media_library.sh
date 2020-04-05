@@ -77,96 +77,95 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     search_array "$mra_size" $3 "${media_res_array[@]}"
  }
 
+ gen_xml() {
+     echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+    <newsMessage xmlns=\"http://iptc.org/std/nar/2006-10-01/\" xmlns:php=\"http://php.net/xsl\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\" xmlns:jupiter=\"http://jupiter.bbc.co.uk/newsml\" >
+        <header>
+            <sent>$CURRENT_TIMESTAMP_WITH_MS</sent>
+            <sender>Shoot edit tool</sender>
+            <priority>4</priority>
+        </header>
+        <itemSet>
+            <newsItem standard=\"NewsML-G2\" standardversion=\"2.25\" conformance=\"power\" guid=\"$UUID\"  >
+                <catalogRef href=\"http://www.iptc.org/std/catalog/catalog.IPTC-G2-Standards_22.xml\"/>
+                <rightsInfo>
+                    <copyrightHolder  literal=\"TEST 2\" jupiter:item=\"summarycopyrightholder\">
+                        <name>BSD</name>
+                    </copyrightHolder>
+                    <usageTerms jupiter:item_trafficlightdescription=\"RED\">WARNING THIS A TRAFFICLIGHT DESCRIPTION
+
+                        This content is for testing  purposes only.</usageTerms>
+                </rightsInfo>
+                <itemMeta>
+                    <itemClass qcode=\"ninat:video\"/>
+                    <provider qcode=\"nprov:BBC\"/>
+                    <versionCreated jupiter:item=\"arrivaldatetime\">$CURRENT_TIMESTAMP_WITH_MS</versionCreated>
+                    <generator/>
+                    <profile/>
+                </itemMeta>
+                <contentMeta>
+                    <contentCreated jupiter:item=\"creationdatetime\">$CURRENT_TIMESTAMP_WITH_MS</contentCreated>
+                    <contentModified>2020-03-16T13:00:51.818Z</contentModified>
+
+                    <creator jupiter:item=\"createdbyuser\">
+                        <name>Ivan</name>
+                    </creator>
+                    <slugline jupiter:item=\"storyname\">zzivan</slugline>
+                    <headline jupiter:item=\"details\">ingest test sprint 43- 1731 ($chosen_res / $chosen_file)</headline>
+                    <description jupiter:item=\"description\">
+                        this is to test ingest of $chosen_res with file $chosen_file
+                     </description>
+
+                    <keyword/>
+                    <language tag=\"en-GB\"/>
+                    <jupiter:outlet>News</jupiter:outlet>
+                    <jupiter:mediastatus>Rough Cut</jupiter:mediastatus>
+                    <jupiter:mediacategory>Fimport</jupiter:mediacategory>
+                    <jupiter:description>
+                        <jupiter:sourcedescription>BSD</jupiter:sourcedescription>
+                        <jupiter:crewcamerman>Ivan</jupiter:crewcamerman>
+                    </jupiter:description>
+                </contentMeta>
+            </newsItem>
+        </itemSet>
+    </newsMessage>
+    " >> $1
+ }
+
+ ingest() {
+    echo "3) I will create a new folder in NT (zgbwcjvsfs7ws01).. please log in with your jupiter password if this is the first time this script is run ..."
+    sleep 2
+    ssh zgbwcjvsfs7ws01.jupiter.bbc.co.uk "cd $INGEST_LOC;
+    mkdir ivan-$CURRENT_TIMESTAMP;
+    cd ivan-$CURRENT_TIMESTAMP;
+    mkdir $1;
+    cd $1;"
+    echo "4) will need to login to dump again with npf to transfer source file to your directory temporarily ... "
+    sleep 2
+    scp npf@storage.jupiter.bbc.co.uk:/var/bigpool/shares/dump/00_test_media_library/$1/$selection ./
+    echo "5) generating MD5 for this file ..."
+    sleep 2
+    md5sum $2 | cut -d' ' -f1 > $2.md5
+
+    echo "6) will generate the xml file now... "
+    sleep 2
+    gen_xml $2.xml
+
+    echo "7) will need to login to zgbwcjvsfs7ws01.jupiter.bbc.co.uk again with your Jupiter pw to transfer source file from your local to NT ingest server ... "
+    sleep 2
+    scp ./$2 ./$2.xml ./$2.md5 zgbwcjvsfs7ws01.jupiter.bbc.co.uk:/var/bigpool/JupiterNT/test_ingest/davina/ivan-$CURRENT_TIMESTAMP/$1
+    rm ./$2 ./$2.xml ./$2.md5
+ }
+
 splash
 sending_auth " .. sending authorisation keys to the dump server where the contents are ... " npf@storage.jupiter.bbc.co.uk
 sending_auth " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password if first time ... " zgbwcjvsfs7ws01.jupiter.bbc.co.uk
 display_choices_and_prompt "1) SSHing to Test Library in storage.jupiter.bbc.co.uk ..." \
 "Here are the resolutions available from the library ... " "resolution"
-
 chosen_res=$selection
-echo $chosen_res
-
 display_choices_and_prompt "2) OK, I will need to ask you which file in that resolution you would like to pick..." \
 "Here are the files available in the library for that resolution ... " "file"
-
 chosen_file=$(echo $selection |  rev | cut -d'/' -f1 | rev)
-echo chosen_file = $chosen_file
-
-echo "3) I will create a new folder in NT (zgbwcjvsfs7ws01).. please log in with your jupiter password if this is the first time this script is run ..."
-sleep 2
-ssh zgbwcjvsfs7ws01.jupiter.bbc.co.uk "cd $INGEST_LOC;
-mkdir ivan-$CURRENT_TIMESTAMP;
-cd ivan-$CURRENT_TIMESTAMP;
-mkdir $chosen_res;
-cd $chosen_res;"
-echo "4) will need to login to dump again with npf to transfer source file to your directory temporarily ... "
-sleep 2
-scp npf@storage.jupiter.bbc.co.uk:/var/bigpool/shares/dump/00_test_media_library/$chosen_res/$selection ./
-echo "5) generating MD5 for this file ..."
-sleep 2
-md5sum $chosen_file | cut -d' ' -f1 > $chosen_file.md5
-
-echo "6) will generate the xml file now... "
-sleep 2
-
-echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<newsMessage xmlns=\"http://iptc.org/std/nar/2006-10-01/\" xmlns:php=\"http://php.net/xsl\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\" xmlns:jupiter=\"http://jupiter.bbc.co.uk/newsml\" >
-	<header>
-		<sent>$CURRENT_TIMESTAMP_WITH_MS</sent>
-		<sender>Shoot edit tool</sender>
-		<priority>4</priority>
-	</header>
-	<itemSet>
-		<newsItem standard=\"NewsML-G2\" standardversion=\"2.25\" conformance=\"power\" guid=\"$UUID\"  >
-			<catalogRef href=\"http://www.iptc.org/std/catalog/catalog.IPTC-G2-Standards_22.xml\"/>
-			<rightsInfo>
-				<copyrightHolder  literal=\"TEST 2\" jupiter:item=\"summarycopyrightholder\">
-					<name>BSD</name>
-				</copyrightHolder>
-				<usageTerms jupiter:item_trafficlightdescription=\"RED\">WARNING THIS A TRAFFICLIGHT DESCRIPTION
-
-					This content is for testing  purposes only.</usageTerms>
-			</rightsInfo>
-			<itemMeta>
-				<itemClass qcode=\"ninat:video\"/>
-				<provider qcode=\"nprov:BBC\"/>
-				<versionCreated jupiter:item=\"arrivaldatetime\">$CURRENT_TIMESTAMP_WITH_MS</versionCreated>
-				<generator/>
-				<profile/>
-			</itemMeta>
-			<contentMeta>
-				<contentCreated jupiter:item=\"creationdatetime\">$CURRENT_TIMESTAMP_WITH_MS</contentCreated>
-				<contentModified>2020-03-16T13:00:51.818Z</contentModified>
-
-				<creator jupiter:item=\"createdbyuser\">
-					<name>Ivan</name>
-				</creator>
-				<slugline jupiter:item=\"storyname\">zzivan</slugline>
-				<headline jupiter:item=\"details\">ingest test sprint 43- 1731 ($chosen_res / $chosen_file)</headline>
-				<description jupiter:item=\"description\">
-					this is to test ingest of $chosen_res with file $chosen_file
-				 </description>
-
-				<keyword/>
-				<language tag=\"en-GB\"/>
-				<jupiter:outlet>News</jupiter:outlet>
-				<jupiter:mediastatus>Rough Cut</jupiter:mediastatus>
-				<jupiter:mediacategory>Fimport</jupiter:mediacategory>
-				<jupiter:description>
-					<jupiter:sourcedescription>BSD</jupiter:sourcedescription>
-					<jupiter:crewcamerman>Ivan</jupiter:crewcamerman>
-				</jupiter:description>
-			</contentMeta>
-		</newsItem>
-	</itemSet>
-</newsMessage>
-" >> $chosen_file.xml
-
-
-echo "7) will need to login to zgbwcjvsfs7ws01.jupiter.bbc.co.uk again with your Jupiter pw to transfer source file from your local to NT ingest server ... "
-sleep 2
-scp ./$chosen_file ./$chosen_file.xml ./$chosen_file.md5 zgbwcjvsfs7ws01.jupiter.bbc.co.uk:/var/bigpool/JupiterNT/test_ingest/davina/ivan-$CURRENT_TIMESTAMP/$chosen_res
-rm ./$chosen_file ./$chosen_file.xml ./$chosen_file.md5
-
+ingest $chosen_res $chosen_file $selection
 
 exit 0
