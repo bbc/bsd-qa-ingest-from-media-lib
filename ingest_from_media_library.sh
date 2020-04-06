@@ -63,7 +63,7 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     if [[ $3 == 'resolution' ]]; then
         media_res=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC;ls;")
     elif [[ $3 == 'file' ]]; then
-        media_res=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC/$chosen_res; find . -path '*.[a-z][a-z][a-z]' | cut -c2-")
+        media_res=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC/$chosen_res; find . -path '*.[a-zA-Z][a-zA-Z][a-zA-Z]' | cut -c2-")
     else
         echo " error with the 3rd argument, must be either 'resolution' or 'file"
         exit 1
