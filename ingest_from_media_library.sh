@@ -1,5 +1,8 @@
 #!/bin/bash
 
+DUMP_HOST='storage.jupiter.bbc.co.uk'
+NT_INGEST_HOST='zgbwcjvsfs7ws01.jupiter.bbc.co.uk'
+DUMP_USER='npf'
 MEDIA_LIB_LOC='/var/bigpool/shares/dump/00_test_media_library'
 INGEST_LOC='/var/bigpool/JupiterNT/test_ingest/davina/'
 CURRENT_TIMESTAMP_WITH_MS=$(date +"%Y-%m-%dT%T.818Z")
@@ -60,10 +63,10 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     sleep 2
 
     if [[ $3 == 'resolution' ]]; then
-        media_display=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC;ls;")
+        media_display=$(ssh $DUMP_USER@$DUMP_HOST "cd $MEDIA_LIB_LOC;ls;")
         media_display_array=($media_display)
     elif [[ $3 == 'file' ]]; then
-        results_raw=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC/$chosen_res; find . -path '*.[a-zA-Z][a-zA-Z][a-zA-Z]'")
+        results_raw=$(ssh $DUMP_USER@$DUMP_HOST "cd $MEDIA_LIB_LOC/$chosen_res; find . -path '*.[a-zA-Z][a-zA-Z][a-zA-Z]'")
         media_display=$(echo $results_raw)
         echo media_display = ${media_display}
 
@@ -143,16 +146,16 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
  }
 
  ingest() {
-    echo "3) I will create a new folder in NT (zgbwcjvsfs7ws01).. please log in with your jupiter password if this is the first time this script is run ..."
+    echo "3) I will create a new folder in NT ($NT_INGEST_HOST).. please log in with your jupiter password if this is the first time this script is run ..."
     sleep 2
-    ssh zgbwcjvsfs7ws01.jupiter.bbc.co.uk "cd $INGEST_LOC;
+    ssh $NT_INGEST_HOST "cd $INGEST_LOC;
     mkdir ivan-$CURRENT_TIMESTAMP;
     cd ivan-$CURRENT_TIMESTAMP;
     mkdir $1;
     cd $1;"
     echo "4) will need to login to dump again with npf to transfer source file to your directory temporarily ... "
     sleep 2
-    scp npf@storage.jupiter.bbc.co.uk:/var/bigpool/shares/dump/00_test_media_library/$1/${media_display_array[$selection]} ./
+    scp $DUMP_USER@$DUMP_HOST:/var/bigpool/shares/dump/00_test_media_library/$1/${media_display_array[$selection]} ./
     echo "5) generating MD5 for this file ..."
     sleep 2
     md5sum $2 | cut -d' ' -f1 > $2.md5
@@ -161,9 +164,9 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     sleep 2
     gen_xml $2.xml
 
-    echo "7) will need to login to zgbwcjvsfs7ws01.jupiter.bbc.co.uk again with your Jupiter pw to transfer source file from your local to NT ingest server ... "
+    echo "7) will need to login to $NT_INGEST_HOST again with your Jupiter pw to transfer source file from your local to NT ingest server ... "
     sleep 2
-    scp ./$2 ./$2.xml ./$2.md5 zgbwcjvsfs7ws01.jupiter.bbc.co.uk:/var/bigpool/JupiterNT/test_ingest/davina/ivan-$CURRENT_TIMESTAMP/$1
+    scp ./$2 ./$2.xml ./$2.md5 $NT_INGEST_HOST:/var/bigpool/JupiterNT/test_ingest/davina/ivan-$CURRENT_TIMESTAMP/$1
     rm ./$2 ./$2.xml ./$2.md5
  }
 
@@ -189,9 +192,9 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
  }
 
 splash
-sending_auth " .. sending authorisation keys to the dump server where the contents are ... " npf@storage.jupiter.bbc.co.uk
-#sending_auth " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password if first time ... " zgbwcjvsfs7ws01.jupiter.bbc.co.uk
-display_choices_and_prompt "1) SSHing to Test Library in storage.jupiter.bbc.co.uk ..." \
+sending_auth " .. sending authorisation keys to the dump server where the contents are ... " $DUMP_USER@$DUMP_HOST
+#sending_auth " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password if first time ... " $NT_INGEST_HOST
+display_choices_and_prompt "1) SSHing to Test Library in $DUMP_HOST ..." \
 "Here are the resolutions available from the library ... " "resolution"
 chosen_res=${media_display_array[$selection]}
 display_choices_and_prompt "2) OK, I will need to ask you which file in that resolution you would like to pick..." \
