@@ -20,9 +20,9 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
  display_list() {
      echo "choices are: "
      arr=("$@")
-     for i in "${arr[@]}";
+     for i in "${!arr[@]}";
       do
-        echo "$i"
+        echo "$i ) - ${arr[$i]}"
       done
  }
 
@@ -32,38 +32,48 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     pos=$1
     focus=$2
     display_list "${arr[@]}"
-    i=0
+
     while : ; do
-        echo "... Please choose your $focus by typing in the whole filename or filepath ..."
-        read selection
+
+        read -p "... Please choose your $focus by typing in the index: " selection
+
         echo "you have chosen: $selection .."
 
-        while : ; do
-            if [[ $selection == ${arr[$i]} ]] 
-            then
-            echo this $focus exists; 
-            break 2 
+        re='^[0-9]+$'
+        if ! [[ $selection =~ $re ]] ; then
+           echo "error: Not a number, try again. Try between 0 and $pos" >&2
+           display_list "${arr[@]}"
+        else
+            if [[ $selection -ge 0 && $selection -le $pos ]]; then
+                echo this $focus exists;
+                break
             else
-                if [ "$i" -eq $pos ]
-                then
-                    echo Am afraid this $focus is not on the list, try again ...
-                    display_list "${arr[@]}"
-                    i=0
-                    break
-                fi
-            i=$((i+1)) 
+                echo "error: am afraid this $focus is not on the list. Try between 0 and $pos" >&2
+                display_list "${arr[@]}"
             fi
-        done 
+        fi
     done
  }
 
  display_choices_and_prompt() {
     echo $1
     sleep 2
+
     if [[ $3 == 'resolution' ]]; then
-        media_res=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC;ls;")
+        media_display=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC;ls;")
+        media_display_array=($media_display)
     elif [[ $3 == 'file' ]]; then
-        media_res=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC/$chosen_res; find . -path '*.[a-zA-Z][a-zA-Z][a-zA-Z]' | cut -c2-")
+        results_raw=$(ssh npf@storage.jupiter.bbc.co.uk "cd $MEDIA_LIB_LOC/$chosen_res; find . -path '*.[a-zA-Z][a-zA-Z][a-zA-Z]'")
+        media_display=$(echo $results_raw)
+        echo media_display = ${media_display}
+
+        delimiter=" ."
+        s=$(echo $media_display | cut -c2-)$delimiter
+        media_display_array=();
+        while [[ $s ]]; do
+            media_display_array+=( "${s%%"$delimiter"*}" );
+            s=${s#*"$delimiter"};
+        done;
     else
         echo " error with the 3rd argument, must be either 'resolution' or 'file"
         exit 1
@@ -71,10 +81,10 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
     echo $2
     sleep 2
-    media_res_array=($media_res)
-    echo media_res_array: ${media_res_array[@]}
-    mra_size=$(( ${#media_res_array[*]} - 1 ))
-    search_array "$mra_size" $3 "${media_res_array[@]}"
+
+    mra_size=$(( ${#media_display_array[*]} - 1 ))
+    search_array $mra_size $3 "${media_display_array[@]}"
+
  }
 
  gen_xml() {
@@ -142,7 +152,7 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     cd $1;"
     echo "4) will need to login to dump again with npf to transfer source file to your directory temporarily ... "
     sleep 2
-    scp npf@storage.jupiter.bbc.co.uk:/var/bigpool/shares/dump/00_test_media_library/$1/$selection ./
+    scp npf@storage.jupiter.bbc.co.uk:/var/bigpool/shares/dump/00_test_media_library/$1/${media_display_array[$selection]} ./
     echo "5) generating MD5 for this file ..."
     sleep 2
     md5sum $2 | cut -d' ' -f1 > $2.md5
@@ -180,13 +190,17 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 splash
 sending_auth " .. sending authorisation keys to the dump server where the contents are ... " npf@storage.jupiter.bbc.co.uk
-sending_auth " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password if first time ... " zgbwcjvsfs7ws01.jupiter.bbc.co.uk
+#sending_auth " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password if first time ... " zgbwcjvsfs7ws01.jupiter.bbc.co.uk
 display_choices_and_prompt "1) SSHing to Test Library in storage.jupiter.bbc.co.uk ..." \
 "Here are the resolutions available from the library ... " "resolution"
-chosen_res=$selection
+chosen_res=${media_display_array[$selection]}
 display_choices_and_prompt "2) OK, I will need to ask you which file in that resolution you would like to pick..." \
 "Here are the files available in the library for that resolution ... " "file"
-chosen_file=$(echo $selection |  rev | cut -d'/' -f1 | rev)
-test_ingest $chosen_res $chosen_file $selection
+chosen_file=$(echo ${media_display_array[$selection]} |  rev | cut -d'/' -f1 | rev)
+
+echo $chosen_res
+echo $chosen_file
+
+test_ingest $chosen_res $chosen_file ${media_display_array[$selection]}
 
 exit 0
