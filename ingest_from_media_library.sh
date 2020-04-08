@@ -31,12 +31,10 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
  try_again_sub() {
     echo "error: $1. Try again between 0 and $2" >&2
-    display_list $3
  }
 
  search_array() {
-    arr=("${@:3}") 
-    echo arr[@]: ${arr[@]}
+    arr=("${@:3}")
     pos=$1
     focus=$2
     display_list "${arr[@]}"
@@ -48,13 +46,15 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
         re='^[0-9]+$'
         if ! [[ $selection =~ $re ]] ; then
-           try_again_sub "Not a number" $pos "${arr[@]}"
+            try_again_sub "Not a number" $pos
+            display_list "${arr[@]}"
         else
             if [[ $selection -ge 0 && $selection -le $pos ]]; then
                 echo this $focus exists;
                 break
             else
-                try_again_sub "Am afraid this $focus is not on the list" $pos "${arr[@]}"
+                try_again_sub "Am afraid this $focus is not on the list" $pos
+                display_list "${arr[@]}"
             fi
         fi
     done
@@ -70,7 +70,6 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     elif [[ $3 == 'file' ]]; then
         results_raw=$(ssh $DUMP_USER@$DUMP_HOST "cd $MEDIA_LIB_LOC/$chosen_res; find . -path '*.[a-zA-Z][a-zA-Z][a-zA-Z]'")
         media_display=$(echo $results_raw)
-        echo media_display = ${media_display}
 
         delimiter=" ."
         s=$(echo $media_display | cut -c2-)$delimiter
