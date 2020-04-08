@@ -29,6 +29,11 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
       done
  }
 
+ try_again_sub() {
+    echo "error: $1. Try again between 0 and $2" >&2
+    display_list $3
+ }
+
  search_array() {
     arr=("${@:3}") 
     echo arr[@]: ${arr[@]}
@@ -39,20 +44,17 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     while : ; do
 
         read -p "... Please choose your $focus by typing in the index: " selection
-
         echo "you have chosen: $selection .."
 
         re='^[0-9]+$'
         if ! [[ $selection =~ $re ]] ; then
-           echo "error: Not a number, try again. Try between 0 and $pos" >&2
-           display_list "${arr[@]}"
+           try_again_sub "Not a number" $pos "${arr[@]}"
         else
             if [[ $selection -ge 0 && $selection -le $pos ]]; then
                 echo this $focus exists;
                 break
             else
-                echo "error: am afraid this $focus is not on the list. Try between 0 and $pos" >&2
-                display_list "${arr[@]}"
+                try_again_sub "Am afraid this $focus is not on the list" $pos "${arr[@]}"
             fi
         fi
     done
