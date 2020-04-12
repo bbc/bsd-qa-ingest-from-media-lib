@@ -3,7 +3,9 @@
 DUMP_HOST='storage.jupiter.bbc.co.uk'
 NT_INGEST_HOST='zgbwcjvsfs7ws01.jupiter.bbc.co.uk'
 DUMP_USER='npf'
-MEDIA_LIB_LOC='/var/bigpool/shares/dump/00_test_media_library'
+DUMP_PW='npf'
+MOUNT_PT=dump
+MEDIA_LIB_LOC='./dump/00_test_media_library'
 INGEST_LOC='/var/bigpool/JupiterNT/test_ingest/davina/'
 CURRENT_TIMESTAMP_WITH_MS=$(date +"%Y-%m-%dT%T.818Z")
 CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -11,6 +13,19 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
  splash() {
     echo ">>>>>> WELCOME TO THE WIZARD FOR INGESTING MEDIA CONTENT FROM MARK HIMSLEY'S MEDIA LIBRARY ONTO NT <<<<<<"
     sleep 2
+ }
+
+ mount_host() {
+    echo $1
+    if [ ! -d './$5' ];then
+       mkdir ./$5
+    fi
+    mount -t smbfs //$2:$3@$4/$5 ./$5/
+ }
+
+ unmount_host() {
+   echo $1
+   umount ~/$2
  }
 
  sending_auth() {
@@ -65,10 +80,10 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     sleep 2
 
     if [[ $3 == 'resolution' ]]; then
-        media_display=$(ssh $DUMP_USER@$DUMP_HOST "cd $MEDIA_LIB_LOC;ls;")
+        media_display=$(cd $MEDIA_LIB_LOC;ls;)
         media_display_array=($media_display)
     elif [[ $3 == 'file' ]]; then
-        results_raw=$(ssh $DUMP_USER@$DUMP_HOST "cd $MEDIA_LIB_LOC/$chosen_res; find . -path '*.[a-zA-Z][a-zA-Z][a-zA-Z]'")
+        results_raw=$(cd $MEDIA_LIB_LOC/$chosen_res; find . -path '*.[a-zA-Z][a-zA-Z][a-zA-Z]')
         media_display=$(echo $results_raw)
 
         delimiter=" ."
@@ -193,18 +208,16 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
  }
 
 splash
-sending_auth " .. sending authorisation keys to the dump server where the contents are ... " $DUMP_USER@$DUMP_HOST
-#sending_auth " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password if first time ... " $NT_INGEST_HOST
-display_choices_and_prompt "1) SSHing to Test Library in $DUMP_HOST ..." \
+mount_host " .. mounting Jupiter storage drive to local in order to retrieve files for ingest ... " $DUMP_USER $DUMP_PW $DUMP_HOST $MOUNT_PT
+#sending_auth " .. sending authorisation keys to the dump server where the contents are ... " $DUMP_USER@$DUMP_HOST
+sending_auth " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password if first time ... " $NT_INGEST_HOST
+display_choices_and_prompt "1) Locating the Test Media Library in the mounted drive: $DUMP_HOST ..." \
 "Here are the resolutions available from the library ... " "resolution"
 chosen_res=${media_display_array[$selection]}
-display_choices_and_prompt "2) OK, I will need to ask you which file in that resolution you would like to pick..." \
+display_choices_and_prompt "2) Locating the Files for that resolution ..." \
 "Here are the files available in the library for that resolution ... " "file"
 chosen_file=$(echo ${media_display_array[$selection]} |  rev | cut -d'/' -f1 | rev)
-
-echo $chosen_res
-echo $chosen_file
-
 test_ingest $chosen_res $chosen_file ${media_display_array[$selection]}
+unmount_host " .. unmounting Jupiter storage drive to end testing ... " $MOUNT_PT
 
 exit 0
