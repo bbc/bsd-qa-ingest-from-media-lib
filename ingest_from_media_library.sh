@@ -6,20 +6,25 @@ DUMP_USER='npf'
 DUMP_PW='npf'
 MOUNT_PT=dump
 MEDIA_LIB_LOC="./$MOUNT_PT/00_test_media_library"
-INGEST_LOC='/var/bigpool/JupiterNT/test_ingest/davina/'
+INGEST_LOC='/var/bigpool/JupiterNT/test_ingest/davina'
 CURRENT_TIMESTAMP_WITH_MS=$(date +"%Y-%m-%dT%T.818Z")
 CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+TMP_DIR=to_be_ingested_tmp
 
  splash() {
     echo ">>>>>> WELCOME TO THE WIZARD FOR INGESTING MEDIA CONTENT FROM MARK HIMSLEY'S MEDIA LIBRARY ONTO NT <<<<<<"
     sleep 2
  }
 
+ mkdir_test() {
+    if [ ! -d './$1' ];then
+        mkdir ./$1
+    fi
+ }
+
  mount_host() {
     echo $1
-    if [ ! -d './$5' ];then
-       mkdir ./$5
-    fi
+    mkdir_test $5
     mount -t smbfs //$2:$3@$4/$5 ./$5/
  }
 
@@ -162,28 +167,37 @@ CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
  }
 
  ingest() {
-    echo "3) I will create a new folder in NT ($NT_INGEST_HOST).. please log in with your jupiter password if this is the first time this script is run ..."
+    echo "3) Just gonna create a temp folder to gather all the essential files for ingesting ..."
+    sleep 2
+    mkdir_test $4
+
+    echo "4) copying over the file to temp dir ..."
+    sleep 2
+    cp $1 $4
+
+    echo "5) generating MD5 for this file ..."
+    sleep 2
+    md5sum $2 | cut -d' ' -f1 > $2.md5
+    md5sum ./$4/$2 | cut -d' ' -f1 > ./$4/$2.md5
+
+    echo "6) will generate the xml file now... "
+    sleep 2
+    gen_xml ./$4/$2.xml
+
+    echo "7) I will create a new folder in NT ($NT_INGEST_HOST).. please log in with your jupiter password if this is the first time this script is run ..."
     sleep 2
     ssh $NT_INGEST_HOST "cd $INGEST_LOC;
     mkdir ivan-$CURRENT_TIMESTAMP;
     cd ivan-$CURRENT_TIMESTAMP;
-    mkdir $1;
-    cd $1;"
-    echo "4) will need to login to dump again with npf to transfer source file to your directory temporarily ... "
-    sleep 2
-    scp $DUMP_USER@$DUMP_HOST:/var/bigpool/shares/dump/00_test_media_library/$1/${media_display_array[$selection]} ./
-    echo "5) generating MD5 for this file ..."
-    sleep 2
-    md5sum $2 | cut -d' ' -f1 > $2.md5
+    mkdir $3;
+    cd $3"
 
-    echo "6) will generate the xml file now... "
+    echo "8) will begin SCP the contents of the temp dir to this folder"
     sleep 2
-    gen_xml $2.xml
-
-    echo "7) will need to login to $NT_INGEST_HOST again with your Jupiter pw to transfer source file from your local to NT ingest server ... "
-    sleep 2
-    scp ./$2 ./$2.xml ./$2.md5 $NT_INGEST_HOST:/var/bigpool/JupiterNT/test_ingest/davina/ivan-$CURRENT_TIMESTAMP/$1
-    rm ./$2 ./$2.xml ./$2.md5
+    cd ./$4/
+    scp ./$2 ./$2.xml ./$2.md5 $NT_INGEST_HOST:$INGEST_LOC/ivan-$CURRENT_TIMESTAMP/$3
+    cd ..
+    rm -R ./$4
  }
 
  success() {
@@ -216,8 +230,10 @@ display_choices_and_prompt "1) Locating the Test Media Library in the mounted dr
 chosen_res=${media_display_array[$selection]}
 display_choices_and_prompt "2) Locating the Files for that resolution ..." \
 "Here are the files available in the library for that resolution ... " "file"
+chosen_file_with_path=${media_display_array[$selection]}
 chosen_file=$(echo ${media_display_array[$selection]} |  rev | cut -d'/' -f1 | rev)
-test_ingest $chosen_res $chosen_file ${media_display_array[$selection]}
-unmount_host " .. unmounting Jupiter storage drive to end testing ... " $MOUNT_PT
+path_to_file=$MEDIA_LIB_LOC/$chosen_res$chosen_file_with_path
+test_ingest $path_to_file $chosen_file $chosen_res $TMP_DIR
+unmount_host " 9) .. unmounting Jupiter storage drive to end testing ... " $MOUNT_PT
 
 exit 0
