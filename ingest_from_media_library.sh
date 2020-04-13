@@ -9,7 +9,7 @@ MEDIA_LIB_LOC="./$MOUNT_PT/00_test_media_library"
 INGEST_LOC='/var/bigpool/JupiterNT/test_ingest/davina'
 CURRENT_TIMESTAMP_WITH_MS=$(date +"%Y-%m-%dT%T.818Z")
 CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-FILE_EXTS=('MXF' 'mov' 'avi' 'AVI' 'wav' 'ts' 'BIM' 'PPN' 'SMI' 'IND' 'BMP')
+FILE_EXTS=('MXF' 'mov' 'avi' 'AVI' 'wav' 'ts' 'BIM' 'PPN' 'SMI' 'IND' 'BMP' 'mp4')
 FIND_FILES_CMD="find ."
 TMP_DIR=to_be_ingested_tmp
 
@@ -107,15 +107,19 @@ TMP_DIR=to_be_ingested_tmp
 
         media_display=$(echo $results_raw)
 
-        delimiter=" ."
-        s=$(echo $media_display | cut -c2-)$delimiter
-        media_display_array=();
-        while [[ $s ]]; do
-            media_display_array+=( "${s%%"$delimiter"*}" );
-            s=${s#*"$delimiter"};
-        done;
+        if [[ ! $media_display ]]; then
+            return 1
+        else
+            delimiter=" ."
+            s=$(echo $media_display | cut -c2-)$delimiter
+            media_display_array=();
+            while [[ $s ]]; do
+                media_display_array+=( "${s%%"$delimiter"*}" );
+                s=${s#*"$delimiter"};
+            done;
+        fi
     else
-        echo "... error with the 3rd argument, must be either 'resolution' or 'file"
+        echo "... error with the 3rd argument, must be either 'resolution' or 'file" >&2
         exit 1
     fi
     sleep 2
@@ -123,6 +127,23 @@ TMP_DIR=to_be_ingested_tmp
     mra_size=$(( ${#media_display_array[*]} - 1 ))
     search_array $mra_size $3 "${media_display_array[@]}"
 
+ }
+
+ select_res_and_file() {
+    while : ; do
+        display_choices_and_prompt "1) Locating the Test Media Library in the mounted drive: $DUMP_HOST ..." \
+        "Here are the resolutions available from the library ... " "resolution"
+        chosen_res=${media_display_array[$selection]}
+
+        display_choices_and_prompt "2) Locating the Files for that resolution ..." \
+        "Here are the files available in the library for that resolution ... " "file"
+        if [[ $? -eq 0 ]];then
+            echo "good to go, there are files "
+            break
+        else
+            echo "... sorry there are currently no files for this resolution! try picking another resolution ... "
+        fi
+    done
  }
 
  gen_xml() {
@@ -239,15 +260,12 @@ splash
 mount_host " .. mounting Jupiter storage drive to local in order to retrieve files for ingest ... " $DUMP_USER $DUMP_PW $DUMP_HOST $MOUNT_PT
 #sending_auth " .. sending authorisation keys to the dump server where the contents are ... " $DUMP_USER@$DUMP_HOST
 sending_auth " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password if first time ... " $NT_INGEST_HOST
-display_choices_and_prompt "1) Locating the Test Media Library in the mounted drive: $DUMP_HOST ..." \
-"Here are the resolutions available from the library ... " "resolution"
-chosen_res=${media_display_array[$selection]}
-display_choices_and_prompt "2) Locating the Files for that resolution ..." \
-"Here are the files available in the library for that resolution ... " "file"
+select_res_and_file
 chosen_file_with_path=${media_display_array[$selection]}
 chosen_file=$(echo ${media_display_array[$selection]} |  rev | cut -d'/' -f1 | rev)
 path_to_file=$MEDIA_LIB_LOC/$chosen_res$chosen_file_with_path
 #test_ingest $path_to_file $chosen_file $chosen_res $TMP_DIR
 unmount_host " 9) .. unmounting Jupiter storage drive to end testing ... " $MOUNT_PT
+rm -R ./dump
 
 exit 0
