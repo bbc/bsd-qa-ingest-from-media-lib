@@ -33,7 +33,7 @@ TMP_DIR=to_be_ingested_tmp
 
  unmount_host() {
    echo $1
-   umount ~/$2
+   umount ./$2
  }
 
  sending_auth() {
