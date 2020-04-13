@@ -44,7 +44,7 @@ TMP_DIR=to_be_ingested_tmp
  }
 
  display_list() {
-     echo "choices are: "
+     echo "... choices are: "
      arr=("$@")
      for i in "${!arr[@]}";
       do
@@ -53,7 +53,7 @@ TMP_DIR=to_be_ingested_tmp
  }
 
  try_again_sub() {
-    echo "error: $1. Try again between 0 and $2" >&2
+    echo "... error: $1. Try again between 0 and $2" >&2
  }
 
  search_array() {
@@ -65,7 +65,7 @@ TMP_DIR=to_be_ingested_tmp
     while : ; do
 
         read -p "... Please choose your $focus by typing in the index: " selection
-        echo "you have chosen: $selection .."
+        echo "... you have chosen: $selection .."
 
         re='^[0-9]+$'
         if ! [[ $selection =~ $re ]] ; then
@@ -73,7 +73,7 @@ TMP_DIR=to_be_ingested_tmp
             display_list "${arr[@]}"
         else
             if [[ $selection -ge 0 && $selection -le $pos ]]; then
-                echo this $focus exists;
+                echo "... this $focus exists";
                 break
             else
                 try_again_sub "Am afraid this $focus is not on the list" $pos
@@ -86,14 +86,12 @@ TMP_DIR=to_be_ingested_tmp
  build_find_command() {
     echo " ... gathering all the file extensions set in this script under FILE_EXTS to search "
     for i in ${!FILE_EXTS[@]}; do
-        echo $i : ${FILE_EXTS[$i]}
         if [[ $i -eq 0 ]]; then
             FIND_FILES_CMD+=" -path '*.${FILE_EXTS[$i]}' "
         else
             FIND_FILES_CMD+="-o  -path '*.${FILE_EXTS[$i]}' "
         fi
     done
-    echo FIND_FILES_CMD = $FIND_FILES_CMD
  }
 
  display_choices_and_prompt() {
@@ -117,7 +115,7 @@ TMP_DIR=to_be_ingested_tmp
             s=${s#*"$delimiter"};
         done;
     else
-        echo " error with the 3rd argument, must be either 'resolution' or 'file"
+        echo "... error with the 3rd argument, must be either 'resolution' or 'file"
         exit 1
     fi
     sleep 2
