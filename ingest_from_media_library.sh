@@ -9,7 +9,10 @@ MEDIA_LIB_LOC="./$MOUNT_PT/00_test_media_library"
 INGEST_LOC='/var/bigpool/JupiterNT/test_ingest/davina'
 CURRENT_TIMESTAMP_WITH_MS=$(date +"%Y-%m-%dT%T.818Z")
 CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+FILE_EXTS=('MXF' 'mov' 'avi' 'AVI' 'wav' 'ts' 'BIM' 'PPN' 'SMI' 'IND' 'BMP')
+FIND_FILES_CMD="find ."
 TMP_DIR=to_be_ingested_tmp
+
 
  splash() {
     echo ">>>>>> WELCOME TO THE WIZARD FOR INGESTING MEDIA CONTENT FROM MARK HIMSLEY'S MEDIA LIBRARY ONTO NT <<<<<<"
@@ -80,6 +83,19 @@ TMP_DIR=to_be_ingested_tmp
     done
  }
 
+ build_find_command() {
+    echo " ... gathering all the file extensions set in this script under FILE_EXTS to search "
+    for i in ${!FILE_EXTS[@]}; do
+        echo $i : ${FILE_EXTS[$i]}
+        if [[ $i -eq 0 ]]; then
+            FIND_FILES_CMD+=" -path '*.${FILE_EXTS[$i]}' "
+        else
+            FIND_FILES_CMD+="-o  -path '*.${FILE_EXTS[$i]}' "
+        fi
+    done
+    echo FIND_FILES_CMD = $FIND_FILES_CMD
+ }
+
  display_choices_and_prompt() {
     echo $1
     sleep 2
@@ -88,7 +104,9 @@ TMP_DIR=to_be_ingested_tmp
         media_display=$(cd $MEDIA_LIB_LOC;ls;)
         media_display_array=($media_display)
     elif [[ $3 == 'file' ]]; then
-        results_raw=$(cd $MEDIA_LIB_LOC/$chosen_res; find . -path '*.[a-zA-Z][a-zA-Z][a-zA-Z]')
+        build_find_command
+        results_raw=$(cd $MEDIA_LIB_LOC/$chosen_res; eval $FIND_FILES_CMD)
+
         media_display=$(echo $results_raw)
 
         delimiter=" ."
@@ -102,8 +120,6 @@ TMP_DIR=to_be_ingested_tmp
         echo " error with the 3rd argument, must be either 'resolution' or 'file"
         exit 1
     fi
-
-    echo $2
     sleep 2
 
     mra_size=$(( ${#media_display_array[*]} - 1 ))
@@ -233,7 +249,7 @@ display_choices_and_prompt "2) Locating the Files for that resolution ..." \
 chosen_file_with_path=${media_display_array[$selection]}
 chosen_file=$(echo ${media_display_array[$selection]} |  rev | cut -d'/' -f1 | rev)
 path_to_file=$MEDIA_LIB_LOC/$chosen_res$chosen_file_with_path
-test_ingest $path_to_file $chosen_file $chosen_res $TMP_DIR
+#test_ingest $path_to_file $chosen_file $chosen_res $TMP_DIR
 unmount_host " 9) .. unmounting Jupiter storage drive to end testing ... " $MOUNT_PT
 
 exit 0
