@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DUMP_HOST='storage.jupiter.bbc.co.uk'
-NT_INGEST_HOST='zgbwcjvsfs7ws01.jupiter.bbc.co.uk'
+NT_INGEST_HOST='zgbwcJNTfs7601.jupiter.bbc.co.uk'
 DUMP_USER='npf'
 DUMP_PW='npf'
 MOUNT_PT=dump
@@ -17,11 +17,15 @@ TMP_DIR=to_be_ingested_tmp
  splash() {
     echo ">>>>>> WELCOME TO THE WIZARD FOR INGESTING MEDIA CONTENT FROM MARK HIMSLEY'S MEDIA LIBRARY ONTO NT <<<<<<"
     sleep 2
+    read -p " ... please type your jupiter username for NT ingest server $NT_INGEST_HOST : " ingest_host_user
  }
 
  mkdir_test() {
-    if [ ! -d './$1' ];then
-        mkdir ./$1
+    if [ ! -d "$1" ]; then
+       echo "... you dont have dump mount point"
+       mkdir $1
+    else
+       echo "... you have storage directory already"
     fi
  }
 
@@ -33,13 +37,14 @@ TMP_DIR=to_be_ingested_tmp
 
  unmount_host() {
    echo $1
-   umount ./$2
+   umount $2
  }
 
  sending_auth() {
     echo $1
     sleep 2
-    cat ~/.ssh/id_rsa.pub | ssh $2 ' cat >>.ssh/authorized_keys'
+#    cat ~/.ssh/id_rsa.pub | ssh $2 ' cat >>.ssh/authorized_keys'
+    ssh-copy-id -i ~/.ssh/id_rsa.pub $2
     sleep 2
  }
 
@@ -249,23 +254,31 @@ TMP_DIR=to_be_ingested_tmp
  }
 
  test_ingest() {
-    if [[ "$(ingest $1 $2 $3)" != "0" ]];then
-    success $2 $1
+    ingest $1 $2 $3
+    if [ $? -eq 0 ]; then
+        success $2 $1
     else
-    failure $2 $1
+        failure $2 $1
     fi
  }
 
 splash
 mount_host " .. mounting Jupiter storage drive to local in order to retrieve files for ingest ... " $DUMP_USER $DUMP_PW $DUMP_HOST $MOUNT_PT
-#sending_auth " .. sending authorisation keys to the dump server where the contents are ... " $DUMP_USER@$DUMP_HOST
-sending_auth " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password if first time ... " $NT_INGEST_HOST
+sending_auth " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password if first time ... " $ingest_host_user@$NT_INGEST_HOST
 select_res_and_file
 chosen_file_with_path=${media_display_array[$selection]}
+
+echo DEBUG: chosen_file_with_path = $chosen_file_with_path
+
 chosen_file=$(echo ${media_display_array[$selection]} |  rev | cut -d'/' -f1 | rev)
+
+echo DEBUG: chosen_file = $chosen_file
+
 path_to_file=$MEDIA_LIB_LOC/$chosen_res$chosen_file_with_path
+
+echo DEBUG: path_to_file = $path_to_file
+
 #test_ingest $path_to_file $chosen_file $chosen_res $TMP_DIR
 unmount_host " 9) .. unmounting Jupiter storage drive to end testing ... " $MOUNT_PT
-rm -R ./dump
 
 exit 0
