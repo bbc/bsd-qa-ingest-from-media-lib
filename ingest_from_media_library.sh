@@ -243,13 +243,13 @@ TMP_DIR=to_be_ingested_tmp
     echo ">>>>>> The file $1 for resolution $2 has begun to be ingested <<<<<<"
     echo ">>>>>> check out the progress in http://zgbwcjvpxy7600.jupiter.bbc.co.uk/jupGUI/jobs/ <<<<<<"
     echo ">>>>>> After JOE jobs complete, check out the ingested media item in Jupiter Web https://test.jupiter.bbc.co.uk/#site=76&query=zzivan <<<<<<"
-    sleep 2
+    exit 0
  }
 
   failure() {
     echo ">>>>>> Unfortunately, The file $1 for resolution $2 could not be ingested <<<<<<"
     echo ">>>>>> Please run the script again <<<<<<"
-    sleep 2
+    exit 1
  }
 
  test_ingest() {
@@ -279,5 +279,3 @@ echo DEBUG: path_to_file = $path_to_file
 
 #test_ingest $path_to_file $chosen_file $chosen_res $TMP_DIR
 unmount_host " 9) .. unmounting Jupiter storage drive to end testing ... " $MOUNT_PT
-
-exit 0
