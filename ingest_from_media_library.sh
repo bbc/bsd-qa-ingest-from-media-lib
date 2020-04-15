@@ -43,7 +43,6 @@ TMP_DIR=to_be_ingested_tmp
  sending_auth() {
     echo $1
     sleep 2
-#    cat ~/.ssh/id_rsa.pub | ssh $2 ' cat >>.ssh/authorized_keys'
     ssh-copy-id -i ~/.ssh/id_rsa.pub $2
     sleep 2
  }
