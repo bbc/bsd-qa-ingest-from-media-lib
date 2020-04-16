@@ -225,16 +225,19 @@ TMP_DIR=to_be_ingested_tmp
 
     echo "7) I will create a new folder in NT ($NT_INGEST_HOST).. please log in with your jupiter password if this is the first time this script is run ..."
     sleep 2
+    dest_dir=$(echo $3 |  sed s'/[(]//g' | sed s'/[)]//g');
     ssh $NT_INGEST_HOST "cd $INGEST_LOC;
     mkdir ivan-$CURRENT_TIMESTAMP;
     cd ivan-$CURRENT_TIMESTAMP;
-    mkdir $3;
-    cd $3"
+    mkdir $dest_dir;
+    cd $dest_dir"
 
     echo "8) will begin SCP the contents of the temp dir to this folder"
     sleep 2
     cd ./"$4"/
-    scp ./"$2" ./"$2".xml ./"$2".md5 $NT_INGEST_HOST:$INGEST_LOC/ivan-$CURRENT_TIMESTAMP/"$3"
+
+    dest_host_filepath=$NT_INGEST_HOST:$INGEST_LOC/ivan-$CURRENT_TIMESTAMP/$dest_dir/
+    scp ./"$2" ./"$2".xml ./"$2".md5 $dest_host_filepath
     cd ..
     rm -rf ./"$4"
  }
