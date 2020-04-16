@@ -185,7 +185,7 @@ TMP_DIR=to_be_ingested_tmp
                         <name>Ivan</name>
                     </creator>
                     <slugline jupiter:item=\"storyname\">zzivan</slugline>
-                    <headline jupiter:item=\"details\">ingest test sprint 43- 1731 ($chosen_res / $chosen_file)</headline>
+                    <headline jupiter:item=\"details\">ingest test ($chosen_res / $chosen_file)</headline>
                     <description jupiter:item=\"description\">
                         this is to test ingest of $chosen_res with file $chosen_file
                      </description>
