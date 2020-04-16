@@ -5,7 +5,8 @@ NT_INGEST_HOST='zgbwcJNTfs7601.jupiter.bbc.co.uk'
 DUMP_USER='npf'
 DUMP_PW='npf'
 MOUNT_PT=dump
-MEDIA_LIB_LOC="./$MOUNT_PT/00_test_media_library"
+#MEDIA_LIB_LOC="./$MOUNT_PT/00_test_media_library"
+MEDIA_LIB_LOC="/Users/cheuni02/media_library"
 INGEST_LOC='/var/bigpool/JupiterNT/test_ingest/davina'
 CURRENT_TIMESTAMP_WITH_MS=$(date +"%Y-%m-%dT%T.818Z")
 CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -17,15 +18,15 @@ TMP_DIR=to_be_ingested_tmp
  splash() {
     echo ">>>>>> WELCOME TO THE WIZARD FOR INGESTING MEDIA CONTENT FROM MARK HIMSLEY'S MEDIA LIBRARY ONTO NT <<<<<<"
     sleep 2
-    read -p " ... please type your jupiter username for NT ingest server $NT_INGEST_HOST : " ingest_host_user
+#    read -p " ... please type your jupiter username for NT ingest server $NT_INGEST_HOST : " ingest_host_user
  }
 
  mkdir_test() {
     if [ ! -d "$1" ]; then
-       echo "... you dont have dump mount point"
+       echo "... you dont have $1 mount point"
        mkdir $1
     else
-       echo "... you have storage directory already"
+       echo "... you have $1 directory already"
     fi
  }
 
@@ -212,16 +213,15 @@ TMP_DIR=to_be_ingested_tmp
 
     echo "4) copying over the file to temp dir ..."
     sleep 2
-    cp $1 $4
+    cp "$1" ./"$4"
 
     echo "5) generating MD5 for this file ..."
     sleep 2
-    md5sum $2 | cut -d' ' -f1 > $2.md5
-    md5sum ./$4/$2 | cut -d' ' -f1 > ./$4/$2.md5
+    md5sum ./"$4"/"$2" | cut -d' ' -f1 > ./"$4"/"$2".md5
 
     echo "6) will generate the xml file now... "
     sleep 2
-    gen_xml ./$4/$2.xml
+    gen_xml ./"$4"/"$2".xml
 
     echo "7) I will create a new folder in NT ($NT_INGEST_HOST).. please log in with your jupiter password if this is the first time this script is run ..."
     sleep 2
@@ -233,10 +233,10 @@ TMP_DIR=to_be_ingested_tmp
 
     echo "8) will begin SCP the contents of the temp dir to this folder"
     sleep 2
-    cd ./$4/
-    scp ./$2 ./$2.xml ./$2.md5 $NT_INGEST_HOST:$INGEST_LOC/ivan-$CURRENT_TIMESTAMP/$3
+    cd ./"$4"/
+    scp ./"$2" ./"$2".xml ./"$2".md5 $NT_INGEST_HOST:$INGEST_LOC/ivan-$CURRENT_TIMESTAMP/"$3"
     cd ..
-    rm -R ./$4
+    rm -rf ./"$4"
  }
 
  success() {
@@ -253,7 +253,11 @@ TMP_DIR=to_be_ingested_tmp
  }
 
  test_ingest() {
-    ingest $1 $2 $3
+    echo \$1: $1
+    echo \$2: $2
+    echo \$3: $3
+    echo \$4: $4
+    ingest "$1" "$2" "$3" "$4"
     if [ $? -eq 0 ]; then
         success $2 $1
     else
@@ -263,19 +267,21 @@ TMP_DIR=to_be_ingested_tmp
 
 splash
 mount_host " .. mounting Jupiter storage drive to local in order to retrieve files for ingest ... " $DUMP_USER $DUMP_PW $DUMP_HOST $MOUNT_PT
-sending_auth " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password if first time ... " $ingest_host_user@$NT_INGEST_HOST
+sending_auth " .. sending authorisation keys to the destination NT server where the contents are, please log in with your JUPITER domain password if first time ... " $NT_INGEST_HOST
 select_res_and_file
-chosen_file_with_path=${media_display_array[$selection]}
+filepath_from_pwd=${media_display_array[$selection]}
 
-echo DEBUG: chosen_file_with_path = $chosen_file_with_path
+echo DEBUG: filepath_from_pwd = $filepath_from_pwd
+
+echo DEBUG: chosen_res = $chosen_res
 
 chosen_file=$(echo ${media_display_array[$selection]} |  rev | cut -d'/' -f1 | rev)
 
 echo DEBUG: chosen_file = $chosen_file
 
-path_to_file=$MEDIA_LIB_LOC/$chosen_res$chosen_file_with_path
+absolute_filepath="$MEDIA_LIB_LOC/$chosen_res$filepath_from_pwd"
 
-echo DEBUG: path_to_file = $path_to_file
+echo DEBUG: absolute_filepath = $absolute_filepath
 
-#test_ingest $path_to_file $chosen_file $chosen_res $TMP_DIR
+test_ingest "$absolute_filepath" "$chosen_file" "$chosen_res" "$TMP_DIR"
 unmount_host " 9) .. unmounting Jupiter storage drive to end testing ... " $MOUNT_PT
