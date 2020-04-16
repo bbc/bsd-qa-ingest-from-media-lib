@@ -6,7 +6,6 @@ DUMP_USER='npf'
 DUMP_PW='npf'
 MOUNT_PT=dump
 MEDIA_LIB_LOC="./$MOUNT_PT/00_test_media_library"
-#MEDIA_LIB_LOC="/Users/cheuni02/media_library"
 INGEST_LOC='/var/bigpool/JupiterNT/test_ingest/davina'
 CURRENT_TIMESTAMP_WITH_MS=$(date +"%Y-%m-%dT%T.818Z")
 CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
