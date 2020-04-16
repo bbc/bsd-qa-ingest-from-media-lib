@@ -5,12 +5,12 @@ NT_INGEST_HOST='zgbwcJNTfs7601.jupiter.bbc.co.uk'
 DUMP_USER='npf'
 DUMP_PW='npf'
 MOUNT_PT=dump
-#MEDIA_LIB_LOC="./$MOUNT_PT/00_test_media_library"
-MEDIA_LIB_LOC="/Users/cheuni02/media_library"
+MEDIA_LIB_LOC="./$MOUNT_PT/00_test_media_library"
+#MEDIA_LIB_LOC="/Users/cheuni02/media_library"
 INGEST_LOC='/var/bigpool/JupiterNT/test_ingest/davina'
 CURRENT_TIMESTAMP_WITH_MS=$(date +"%Y-%m-%dT%T.818Z")
 CURRENT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-FILE_EXTS=('MXF' 'mov' 'avi' 'AVI' 'wav' 'ts' 'BIM' 'PPN' 'SMI' 'IND' 'BMP' 'mp4')
+FILE_EXTS=('mxf' 'mov' 'avi' 'wav' 'ts' 'bim' 'ppn' 'smi' 'ind' 'bmp' 'mp4')
 FIND_FILES_CMD="find ."
 TMP_DIR=to_be_ingested_tmp
 
@@ -92,9 +92,9 @@ TMP_DIR=to_be_ingested_tmp
     echo " ... gathering all the file extensions set in this script under FILE_EXTS to search "
     for i in ${!FILE_EXTS[@]}; do
         if [[ $i -eq 0 ]]; then
-            FIND_FILES_CMD+=" -path '*.${FILE_EXTS[$i]}' "
+            FIND_FILES_CMD+=" -ipath '*.${FILE_EXTS[$i]}' "
         else
-            FIND_FILES_CMD+="-o  -path '*.${FILE_EXTS[$i]}' "
+            FIND_FILES_CMD+="-o  -ipath '*.${FILE_EXTS[$i]}' "
         fi
     done
  }
