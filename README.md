@@ -14,7 +14,6 @@ zgbwcjntfs7601.jupiter.co.uk:/var/bigpool/JupiterNT/test_ingest/davina
 
     This will trigger the ingesting which appears in monitoring page 
 
-zgbwcjntfs7601.jupiter.co.uk:/var/bigpool/JupiterNT/test_ingest/davina
 zgbwcjvpxy7600.jupiter.bbc.co.uk/jupGUI/jobs
 
     Which should result in new item showing in Jweb
